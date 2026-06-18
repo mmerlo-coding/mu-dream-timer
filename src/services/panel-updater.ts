@@ -28,7 +28,7 @@ export async function refreshDashboard(
   const config = getGuildConfig(guildId);
   if (!config?.dashboardMessageId) return;
 
-  const channel = await client.channels.fetch(config.notifyChannelId).catch(() => null);
+  const channel = await client.channels.fetch(config.dashboardChannelId).catch(() => null);
   if (!channel?.isSendable()) return;
 
   const message = await channel.messages.fetch(config.dashboardMessageId).catch(() => null);

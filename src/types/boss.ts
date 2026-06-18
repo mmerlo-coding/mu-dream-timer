@@ -32,6 +32,7 @@ export type Boss = {
 export type GuildConfig = {
   guildId: string;
   notifyChannelId: string;
+  dashboardChannelId: string;
   dashboardMessageId: string | null;
 };
 

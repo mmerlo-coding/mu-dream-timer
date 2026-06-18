@@ -14,7 +14,12 @@ export function createBot() {
   client.once("ready", async () => {
     console.log(`Logged in as ${client.user?.tag}`);
 
-    await bootstrapDashboard(client);
+    try {
+      await bootstrapDashboard(client);
+    } catch (error) {
+      console.error("No se pudo publicar el panel:", error);
+    }
+
     startNotificationScheduler(client);
     startDashboardRefreshScheduler(client);
   });

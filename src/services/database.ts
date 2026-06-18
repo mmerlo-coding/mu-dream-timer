@@ -9,10 +9,60 @@ fs.mkdirSync(dataDir, { recursive: true });
 
 const db = new DatabaseSync(path.join(dataDir, "timers-bot.db"));
 
+function getTableColumns(tableName: string) {
+  const rows = db.prepare(`PRAGMA table_info(${tableName})`).all() as { name: string }[];
+  return rows.map((row) => row.name);
+}
+
+function migrateGuildConfigSchema() {
+  const columns = getTableColumns("guild_config");
+
+  if (columns.length === 0) return;
+
+  if (columns.includes("dashboard_message_id")) return;
+
+  db.exec(`
+    CREATE TABLE guild_config_new (
+      guild_id TEXT PRIMARY KEY,
+      notify_channel_id TEXT NOT NULL,
+      dashboard_message_id TEXT
+    );
+
+    INSERT INTO guild_config_new (guild_id, notify_channel_id, dashboard_message_id)
+    SELECT
+      guild_id,
+      MAX(notify_channel_id),
+      MAX(panel_message_id)
+    FROM guild_config
+    GROUP BY guild_id;
+
+    DROP TABLE guild_config;
+    ALTER TABLE guild_config_new RENAME TO guild_config;
+  `);
+}
+
+migrateGuildConfigSchema();
+
+function migrateDashboardChannelColumn() {
+  const columns = getTableColumns("guild_config");
+  if (columns.length === 0) return;
+  if (columns.includes("dashboard_channel_id")) return;
+
+  db.exec(`ALTER TABLE guild_config ADD COLUMN dashboard_channel_id TEXT`);
+  db.exec(`
+    UPDATE guild_config
+    SET dashboard_channel_id = notify_channel_id
+    WHERE dashboard_channel_id IS NULL
+  `);
+}
+
+migrateDashboardChannelColumn();
+
 db.exec(`
   CREATE TABLE IF NOT EXISTS guild_config (
     guild_id TEXT PRIMARY KEY,
     notify_channel_id TEXT NOT NULL,
+    dashboard_channel_id TEXT,
     dashboard_message_id TEXT
   );
 
@@ -30,6 +80,7 @@ db.exec(`
 type GuildConfigRow = {
   guild_id: string;
   notify_channel_id: string;
+  dashboard_channel_id: string | null;
   dashboard_message_id: string | null;
 };
 
@@ -46,6 +97,7 @@ function mapGuildConfig(row: GuildConfigRow): GuildConfig {
   return {
     guildId: row.guild_id,
     notifyChannelId: row.notify_channel_id,
+    dashboardChannelId: row.dashboard_channel_id ?? row.notify_channel_id,
     dashboardMessageId: row.dashboard_message_id,
   };
 }
@@ -66,12 +118,19 @@ export function upsertGuildConfig(config: GuildConfig) {
     INSERT INTO guild_config (
       guild_id,
       notify_channel_id,
+      dashboard_channel_id,
       dashboard_message_id
-    ) VALUES (?, ?, ?)
+    ) VALUES (?, ?, ?, ?)
     ON CONFLICT(guild_id) DO UPDATE SET
       notify_channel_id = excluded.notify_channel_id,
+      dashboard_channel_id = excluded.dashboard_channel_id,
       dashboard_message_id = COALESCE(excluded.dashboard_message_id, guild_config.dashboard_message_id)
-  `).run(config.guildId, config.notifyChannelId, config.dashboardMessageId);
+  `).run(
+    config.guildId,
+    config.notifyChannelId,
+    config.dashboardChannelId,
+    config.dashboardMessageId,
+  );
 }
 
 export function getGuildConfig(guildId: string) {
@@ -152,4 +211,16 @@ export function markNotified(
     SET notified_for_spawn_at = ?
     WHERE guild_id = ? AND mu_server = ? AND boss_id = ?
   `).run(nextSpawnAt, guildId, muServer, bossId);
+}
+
+export function clearAllBossStates(guildId: string) {
+  db.prepare(`DELETE FROM boss_state WHERE guild_id = ?`).run(guildId);
+}
+
+export function countBossStates(guildId: string) {
+  const row = db
+    .prepare(`SELECT COUNT(*) as count FROM boss_state WHERE guild_id = ?`)
+    .get(guildId) as { count: number };
+
+  return row.count;
 }

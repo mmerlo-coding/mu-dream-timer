@@ -31,8 +31,13 @@ Copia `.env.example` → `.env`:
 DISCORD_TOKEN=tu_token
 DISCORD_CLIENT_ID=tu_application_id
 DISCORD_GUILD_ID=id_de_tu_servidor
-NOTIFY_CHANNEL_ID=id_del_canal_bosses
+NOTIFY_CHANNEL_ID=id_canal_avisos
+DASHBOARD_CHANNEL_ID=id_canal_panel
 ```
+
+- **`DASHBOARD_CHANNEL_ID`** — panel con botones (queda fijado arriba). Ej: `#timers`
+- **`NOTIFY_CHANNEL_ID`** — avisos 5 min antes del respawn. Ej: `#avisos-bosses`
+- Si omites `DASHBOARD_CHANNEL_ID`, panel y avisos van al mismo canal.
 
 **Cómo obtener IDs:** Modo desarrollador activado → clic derecho en servidor/canal → Copiar ID.
 
@@ -41,7 +46,7 @@ NOTIFY_CHANNEL_ID=id_del_canal_bosses
 [Developer Portal](https://discord.com/developers/applications) → OAuth2 → URL Generator:
 
 - Scopes: `bot`
-- Permisos: Send Messages, Embed Links, Attach Files, Read Message History
+- Permisos: Send Messages, Embed Links, Attach Files, Read Message History, **Pin Messages** (fijar panel)
 
 ### 3. Desplegar en Render (gratis para empezar)
 

@@ -66,6 +66,12 @@ export function getSpawnRangeLabel(boss: Boss) {
   const { spawnMode } = boss;
 
   if (spawnMode.type === "afterKill") {
+    if (spawnMode.hours === 0 && spawnMode.minutes) {
+      return `${spawnMode.minutes} min después de morir`;
+    }
+    if (spawnMode.minutes) {
+      return `${spawnMode.hours}h ${spawnMode.minutes}m después de morir`;
+    }
     return `${spawnMode.hours}h después de morir`;
   }
 

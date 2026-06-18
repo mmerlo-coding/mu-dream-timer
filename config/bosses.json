@@ -110,5 +110,13 @@
     "quantity": 1,
     "spawnMode": { "type": "fixedTimes", "times": ["23:50"] },
     "image": "assets/bosses/senor-supremo-infernal.png"
+  },
+  {
+    "id": "boss-prueba",
+    "name": "Boss de Prueba",
+    "location": "Testing — eliminar en producción",
+    "quantity": 1,
+    "spawnMode": { "type": "afterKill", "hours": 0, "minutes": 6 },
+    "image": "assets/bosses/borgar.png"
   }
 ]

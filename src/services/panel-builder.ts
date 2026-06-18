@@ -58,6 +58,8 @@ export function buildDashboardEmbed(entries: DashboardEntry[], now = new Date())
         "1. Elige un boss en el menú",
         "2. Pulsa en qué servidor MU murió",
         "",
+        "Panel fijado arriba en su canal. Los avisos van al canal de notificaciones.",
+        "Cualquier miembro con acceso a este canal puede marcar bosses.",
         "5 min antes del respawn recibirás un aviso con imagen y botones.",
       ].join("\n"),
     )
@@ -168,16 +170,44 @@ export function buildKillConfirmationEmbed(
   bossName: string,
   muServer: MuServer,
   nextSpawnAt: Date,
+  markedBy?: string,
 ) {
   return new EmbedBuilder()
     .setColor(0x2ecc71)
     .setTitle(`${bossName} marcado como muerto`)
     .setDescription(
       [
+        markedBy ? `**Marcado por:** ${markedBy}` : null,
         `**Servidor MU:** ${muServer}`,
         `**Próximo respawn:** ${formatServerDateTime(nextSpawnAt)}`,
         "",
-        "Recibirás un aviso con imagen 5 minutos antes.",
-      ].join("\n"),
+        "Aviso con imagen 5 minutos antes del respawn.",
+      ]
+        .filter((line): line is string => Boolean(line))
+        .join("\n"),
     );
+}
+
+export async function sendKillConfirmationToNotifyChannel(
+  client: import("discord.js").Client,
+  guildId: string,
+  notifyChannelId: string,
+  bossId: string,
+  imagePath: string,
+  bossName: string,
+  muServer: MuServer,
+  nextSpawnAt: Date,
+  markedBy: string,
+) {
+  const channel = await client.channels.fetch(notifyChannelId).catch(() => null);
+  if (!channel?.isSendable()) return;
+
+  const embed = buildKillConfirmationEmbed(bossName, muServer, nextSpawnAt, markedBy);
+  const files = imagePath ? [buildBossAttachment(bossId, imagePath)] : [];
+
+  if (files.length > 0) {
+    embed.setThumbnail(`attachment://${bossId}.png`);
+  }
+
+  await channel.send({ embeds: [embed], files });
 }
