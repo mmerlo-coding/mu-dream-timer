@@ -1,0 +1,114 @@
+[
+  {
+    "id": "muggron",
+    "name": "Muggron",
+    "location": "2× Abismo Sombrío, 2× Crywolf, 2× Barracks de Balgass",
+    "quantity": 6,
+    "spawnMode": { "type": "afterKillRange", "minHours": 7, "maxHours": 8 },
+    "image": "assets/bosses/muggron.png"
+  },
+  {
+    "id": "kharzul",
+    "name": "Kharzul",
+    "location": "Abismo Sombrío",
+    "quantity": 1,
+    "spawnMode": { "type": "afterKillRange", "minHours": 7, "maxHours": 8 },
+    "image": "assets/bosses/kharzul.png"
+  },
+  {
+    "id": "vescrya",
+    "name": "Vescrya",
+    "location": "Abismo Sombrío",
+    "quantity": 1,
+    "spawnMode": { "type": "afterKillRange", "minHours": 7, "maxHours": 8 },
+    "image": "assets/bosses/vescrya.png"
+  },
+  {
+    "id": "borgar",
+    "name": "Borgar",
+    "location": "Abismo Sombrío",
+    "quantity": 1,
+    "spawnMode": { "type": "afterKillRange", "minHours": 2, "maxHours": 3 },
+    "image": "assets/bosses/borgar.png"
+  },
+  {
+    "id": "heroe-explorador",
+    "name": "Héroe Explorador",
+    "location": "Crywolf",
+    "quantity": 10,
+    "spawnMode": { "type": "afterKill", "hours": 2 },
+    "image": "assets/bosses/heroe-explorador.png"
+  },
+  {
+    "id": "heroe-hombre-lobo",
+    "name": "Héroe Hombre Lobo",
+    "location": "Crywolf",
+    "quantity": 10,
+    "spawnMode": { "type": "afterKill", "hours": 2 },
+    "image": "assets/bosses/heroe-hombre-lobo.png"
+  },
+  {
+    "id": "goblin-azul",
+    "name": "Goblin Azul",
+    "location": "Abismo Sombrío",
+    "quantity": 5,
+    "spawnMode": { "type": "afterKillRange", "minHours": 10, "maxHours": 11 },
+    "image": "assets/bosses/goblin-azul.png"
+  },
+  {
+    "id": "goblin-rojo",
+    "name": "Goblin Rojo",
+    "location": "Abismo Sombrío",
+    "quantity": 4,
+    "spawnMode": { "type": "afterKillRange", "minHours": 10, "maxHours": 11 },
+    "image": "assets/bosses/goblin-rojo.png"
+  },
+  {
+    "id": "goblin-amarillo",
+    "name": "Goblin Amarillo",
+    "location": "Abismo Sombrío",
+    "quantity": 3,
+    "spawnMode": { "type": "afterKillRange", "minHours": 10, "maxHours": 11 },
+    "image": "assets/bosses/goblin-amarillo.png"
+  },
+  {
+    "id": "dragon-rojo",
+    "name": "Dragón Rojo",
+    "location": "Aida",
+    "quantity": 3,
+    "spawnMode": { "type": "fixedTimes", "times": ["08:00", "20:00"] },
+    "image": "assets/bosses/dragon-rojo.png"
+  },
+  {
+    "id": "abbadon",
+    "name": "Abbadon",
+    "location": "Twisted Karutan",
+    "quantity": 1,
+    "spawnMode": { "type": "fixedTimes", "times": ["03:50", "17:50"] },
+    "image": "assets/bosses/abbadon.png"
+  },
+  {
+    "id": "lord-kundun-shadow",
+    "name": "Lord of Kundun",
+    "location": "Abismo Sombrío",
+    "quantity": 1,
+    "spawnMode": { "type": "fixedTimes", "times": ["01:50", "15:50"] },
+    "image": "assets/bosses/lord-kundun-shadow.png"
+  },
+  {
+    "id": "lord-kundun-kanturu",
+    "name": "Lord of Kundun",
+    "location": "Laberinto de Kanturu",
+    "quantity": 1,
+    "spawnMode": { "type": "fixedTimes", "times": ["04:50", "20:50"] },
+    "image": "assets/bosses/lord-kundun-kanturu.png"
+  },
+  {
+    "id": "senor-supremo-infernal",
+    "name": "Señor Supremo Infernal",
+    "location": "Crimson Icarus",
+    "quantity": 1,
+    "spawnMode": { "type": "fixedTimes", "times": ["23:50"] },
+    "image": "assets/bosses/senor-supremo-infernal.png"
+  }
+]

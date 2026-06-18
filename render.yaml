@@ -1,0 +1,15 @@
+services:
+  - type: worker
+    name: mudream-boss-bot
+    env: node
+    buildCommand: npm install && npm run crop-images
+    startCommand: npm start
+    envVars:
+      - key: DISCORD_TOKEN
+        sync: false
+      - key: DISCORD_CLIENT_ID
+        sync: false
+      - key: DISCORD_GUILD_ID
+        sync: false
+      - key: NOTIFY_CHANNEL_ID
+        sync: false
