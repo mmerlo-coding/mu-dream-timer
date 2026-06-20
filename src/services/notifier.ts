@@ -41,7 +41,12 @@ export async function runNotificationCycle(client: Client) {
       for (const status of statuses) {
         if (!shouldNotify(status, now)) continue;
 
-        const stored = getBossState(config.guildId, muServer, status.boss.id);
+        const stored = getBossState(
+          config.guildId,
+          muServer,
+          status.boss.id,
+          status.mapId,
+        );
         const nextSpawnAt = status.nextSpawnAt?.getTime();
 
         if (!nextSpawnAt) continue;
@@ -56,7 +61,7 @@ export async function runNotificationCycle(client: Client) {
           embed.setImage(`attachment://${status.boss.id}.png`);
         }
 
-        const killButtons = buildNotificationKillButtons(status.boss.id);
+        const killButtons = buildNotificationKillButtons(status.boss.id, status.mapId);
         const components = [
           new ActionRowBuilder<ButtonBuilder>().addComponents(...killButtons),
         ];
@@ -67,12 +72,19 @@ export async function runNotificationCycle(client: Client) {
           guildId: config.guildId,
           muServer,
           bossId: status.boss.id,
+          mapId: status.mapId,
           killedAt: stored?.killedAt ?? null,
           nextSpawnAt,
           notifiedForSpawnAt: nextSpawnAt,
         });
 
-        markNotified(config.guildId, muServer, status.boss.id, nextSpawnAt);
+        markNotified(
+          config.guildId,
+          muServer,
+          status.boss.id,
+          status.mapId,
+          nextSpawnAt,
+        );
       }
     }
   }

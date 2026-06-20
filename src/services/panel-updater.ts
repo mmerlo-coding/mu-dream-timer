@@ -24,6 +24,7 @@ export async function refreshDashboard(
   client: Client,
   guildId: string,
   selectedBossId?: string,
+  selectedMapId?: string,
 ) {
   const config = getGuildConfig(guildId);
   if (!config?.dashboardMessageId) return;
@@ -35,7 +36,7 @@ export async function refreshDashboard(
   if (!message) return;
 
   const entries = getAllDashboardEntries(guildId);
-  await editDashboardMessage(message, entries, selectedBossId);
+  await editDashboardMessage(message, entries, selectedBossId, selectedMapId);
 }
 
 export async function refreshAllDashboards(client: Client) {

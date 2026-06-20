@@ -2,6 +2,7 @@ import { DatabaseSync } from "node:sqlite";
 import fs from "node:fs";
 import path from "node:path";
 import type { BossState, GuildConfig } from "../types/boss.js";
+import { getDefaultMapId } from "./boss-catalog.js";
 import { resolveFromRoot } from "../utils/paths.js";
 
 const dataDir = resolveFromRoot("data");
@@ -77,6 +78,56 @@ db.exec(`
   );
 `);
 
+function migrateBossStateMapColumn() {
+  const columns = getTableColumns("boss_state");
+  if (columns.length === 0) return;
+  if (columns.includes("map_id")) return;
+
+  db.exec(`
+    CREATE TABLE boss_state_new (
+      guild_id TEXT NOT NULL,
+      mu_server INTEGER NOT NULL,
+      boss_id TEXT NOT NULL,
+      map_id TEXT NOT NULL,
+      killed_at INTEGER,
+      next_spawn_at INTEGER NOT NULL,
+      notified_for_spawn_at INTEGER,
+      PRIMARY KEY (guild_id, mu_server, boss_id, map_id)
+    );
+  `);
+
+  const oldRows = db.prepare(`SELECT * FROM boss_state`).all() as BossStateRow[];
+
+  const insert = db.prepare(`
+    INSERT INTO boss_state_new (
+      guild_id,
+      mu_server,
+      boss_id,
+      map_id,
+      killed_at,
+      next_spawn_at,
+      notified_for_spawn_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  for (const row of oldRows) {
+    insert.run(
+      row.guild_id,
+      row.mu_server,
+      row.boss_id,
+      getDefaultMapId(row.boss_id),
+      row.killed_at,
+      row.next_spawn_at,
+      row.notified_for_spawn_at,
+    );
+  }
+
+  db.exec(`DROP TABLE boss_state`);
+  db.exec(`ALTER TABLE boss_state_new RENAME TO boss_state`);
+}
+
+migrateBossStateMapColumn();
+
 type GuildConfigRow = {
   guild_id: string;
   notify_channel_id: string;
@@ -88,6 +139,7 @@ type BossStateRow = {
   guild_id: string;
   mu_server: number;
   boss_id: string;
+  map_id?: string;
   killed_at: number | null;
   next_spawn_at: number;
   notified_for_spawn_at: number | null;
@@ -107,6 +159,7 @@ function mapBossState(row: BossStateRow): BossState {
     guildId: row.guild_id,
     muServer: row.mu_server,
     bossId: row.boss_id,
+    mapId: row.map_id ?? getDefaultMapId(row.boss_id),
     killedAt: row.killed_at,
     nextSpawnAt: row.next_spawn_at,
     notifiedForSpawnAt: row.notified_for_spawn_at,
@@ -160,11 +213,12 @@ export function upsertBossState(state: BossState) {
       guild_id,
       mu_server,
       boss_id,
+      map_id,
       killed_at,
       next_spawn_at,
       notified_for_spawn_at
-    ) VALUES (?, ?, ?, ?, ?, ?)
-    ON CONFLICT(guild_id, mu_server, boss_id) DO UPDATE SET
+    ) VALUES (?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(guild_id, mu_server, boss_id, map_id) DO UPDATE SET
       killed_at = excluded.killed_at,
       next_spawn_at = excluded.next_spawn_at,
       notified_for_spawn_at = excluded.notified_for_spawn_at
@@ -172,19 +226,25 @@ export function upsertBossState(state: BossState) {
     state.guildId,
     state.muServer,
     state.bossId,
+    state.mapId,
     state.killedAt,
     state.nextSpawnAt,
     state.notifiedForSpawnAt,
   );
 }
 
-export function getBossState(guildId: string, muServer: number, bossId: string) {
+export function getBossState(
+  guildId: string,
+  muServer: number,
+  bossId: string,
+  mapId: string,
+) {
   const row = db
     .prepare(`
       SELECT * FROM boss_state
-      WHERE guild_id = ? AND mu_server = ? AND boss_id = ?
+      WHERE guild_id = ? AND mu_server = ? AND boss_id = ? AND map_id = ?
     `)
-    .get(guildId, muServer, bossId) as BossStateRow | undefined;
+    .get(guildId, muServer, bossId, mapId) as BossStateRow | undefined;
 
   return row ? mapBossState(row) : null;
 }
@@ -204,13 +264,14 @@ export function markNotified(
   guildId: string,
   muServer: number,
   bossId: string,
+  mapId: string,
   nextSpawnAt: number,
 ) {
   db.prepare(`
     UPDATE boss_state
     SET notified_for_spawn_at = ?
-    WHERE guild_id = ? AND mu_server = ? AND boss_id = ?
-  `).run(nextSpawnAt, guildId, muServer, bossId);
+    WHERE guild_id = ? AND mu_server = ? AND boss_id = ? AND map_id = ?
+  `).run(nextSpawnAt, guildId, muServer, bossId, mapId);
 }
 
 export function clearAllBossStates(guildId: string) {

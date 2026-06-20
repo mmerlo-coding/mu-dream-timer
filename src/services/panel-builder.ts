@@ -8,7 +8,7 @@ import {
   type Message,
   type SendableChannels,
 } from "discord.js";
-import { getAllBosses } from "./boss-catalog.js";
+import { getAllBosses, getBossById, getDefaultMapId } from "./boss-catalog.js";
 import type { BossStatus } from "./boss-service.js";
 import { getSpawnRangeLabel } from "./spawn-calculator.js";
 import { formatDuration, formatServerDateTime } from "../utils/time.js";
@@ -24,7 +24,7 @@ function buildUpcomingLine(entry: DashboardEntry, now: Date) {
   const remainingLabel =
     remainingMs <= 0 ? "disponible" : formatDuration(remainingMs);
 
-  return `**[S${entry.muServer}]** ${entry.boss.name} — ${remainingLabel}`;
+  return `**[S${entry.muServer}]** ${entry.boss.name} · ${entry.mapName} — ${remainingLabel}`;
 }
 
 export function buildDashboardEmbed(entries: DashboardEntry[], now = new Date()) {
@@ -43,7 +43,7 @@ export function buildDashboardEmbed(entries: DashboardEntry[], now = new Date())
           .filter((line): line is string => Boolean(line))
       : [
           "Sin timers activos.",
-          "Selecciona un boss abajo y pulsa **Murió S1 / S2 / S3** cuando lo maten.",
+          "Selecciona un boss y mapa abajo, luego pulsa **Murió S1 / S2 / S3** cuando lo maten.",
         ];
 
   return new EmbedBuilder()
@@ -56,7 +56,8 @@ export function buildDashboardEmbed(entries: DashboardEntry[], now = new Date())
         ...lines,
         "",
         "1. Elige un boss en el menú",
-        "2. Pulsa en qué servidor MU murió",
+        "2. Elige el mapa donde murió",
+        "3. Pulsa en qué servidor MU murió",
         "",
         "Panel fijado arriba en su canal. Los avisos van al canal de notificaciones.",
         "Cualquier miembro con acceso a este canal puede marcar bosses.",
@@ -67,28 +68,63 @@ export function buildDashboardEmbed(entries: DashboardEntry[], now = new Date())
     .setTimestamp(now);
 }
 
-export function buildKillButtons(bossId: string | null) {
-  const disabled = !bossId;
+export function buildKillButtons(bossId: string | null, mapId: string | null) {
+  const disabled = !bossId || !mapId;
 
   return [1, 2, 3].map((server) =>
     new ButtonBuilder()
-      .setCustomId(`kill:${bossId ?? "none"}:${server}`)
+      .setCustomId(`kill:${bossId ?? "none"}:${mapId ?? "none"}:${server}`)
       .setLabel(`Murió S${server}`)
       .setStyle(ButtonStyle.Danger)
       .setDisabled(disabled),
   );
 }
 
-export function buildNotificationKillButtons(bossId: string) {
+export function buildNotificationKillButtons(bossId: string, mapId: string) {
   return [1, 2, 3].map((server) =>
     new ButtonBuilder()
-      .setCustomId(`kill:${bossId}:${server}`)
+      .setCustomId(`kill:${bossId}:${mapId}:${server}`)
       .setLabel(`☠️ Murió S${server}`)
       .setStyle(ButtonStyle.Danger),
   );
 }
 
-export function buildDashboardComponents(selectedBossId?: string) {
+function buildMapSelectMenu(bossId: string | null, selectedMapId?: string) {
+  const menu = new StringSelectMenuBuilder()
+    .setCustomId(bossId ? `select_map:${bossId}` : "select_map")
+    .setPlaceholder(bossId ? "Seleccionar mapa" : "Primero elige un boss");
+
+  if (!bossId) {
+    return menu.setDisabled(true).addOptions([{ label: "—", value: "none" }]);
+  }
+
+  const boss = getBossById(bossId);
+  if (!boss) {
+    return menu.setDisabled(true).addOptions([{ label: "—", value: "none" }]);
+  }
+
+  const activeMapId = selectedMapId ?? boss.maps[0]?.id;
+
+  return menu.addOptions(
+    boss.maps.map((map) => ({
+      label: map.name,
+      value: map.id,
+      default: map.id === activeMapId,
+    })),
+  );
+}
+
+export function buildDashboardComponents(
+  selectedBossId?: string,
+  selectedMapId?: string,
+) {
+  const activeMapId =
+    selectedBossId && selectedMapId
+      ? selectedMapId
+      : selectedBossId
+        ? getDefaultMapId(selectedBossId)
+        : null;
+
   const selectMenu = new StringSelectMenuBuilder()
     .setCustomId("select_boss")
     .setPlaceholder("Seleccionar boss")
@@ -108,7 +144,12 @@ export function buildDashboardComponents(selectedBossId?: string) {
 
   return [
     new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selectMenu),
-    new ActionRowBuilder<ButtonBuilder>().addComponents(...buildKillButtons(selectedBossId ?? null)),
+    new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
+      buildMapSelectMenu(selectedBossId ?? null, activeMapId ?? undefined),
+    ),
+    new ActionRowBuilder<ButtonBuilder>().addComponents(
+      ...buildKillButtons(selectedBossId ?? null, activeMapId),
+    ),
     new ActionRowBuilder<ButtonBuilder>().addComponents(refreshButton),
   ];
 }
@@ -128,7 +169,7 @@ export function buildNotificationEmbed(
     .setDescription(
       [
         `**Aparecerá en ~5 minutos**`,
-        `**Ubicación:** ${status.boss.location}`,
+        `**Mapa:** ${status.mapName}`,
         `**Respawn:** ${getSpawnRangeLabel(status.boss)}`,
         `**Hora estimada:** ${status.nextSpawnAt ? formatServerDateTime(status.nextSpawnAt) : "—"}`,
         `**Tiempo restante:** ${formatDuration(remainingMs)}`,
@@ -159,15 +200,17 @@ export async function editDashboardMessage(
   message: Message,
   entries: DashboardEntry[],
   selectedBossId?: string,
+  selectedMapId?: string,
 ) {
   await message.edit({
     embeds: [buildDashboardEmbed(entries)],
-    components: buildDashboardComponents(selectedBossId),
+    components: buildDashboardComponents(selectedBossId, selectedMapId),
   });
 }
 
 export function buildKillConfirmationEmbed(
   bossName: string,
+  mapName: string,
   muServer: MuServer,
   nextSpawnAt: Date,
   markedBy?: string,
@@ -178,6 +221,7 @@ export function buildKillConfirmationEmbed(
     .setDescription(
       [
         markedBy ? `**Marcado por:** ${markedBy}` : null,
+        `**Mapa:** ${mapName}`,
         `**Servidor MU:** ${muServer}`,
         `**Próximo respawn:** ${formatServerDateTime(nextSpawnAt)}`,
         "",
@@ -195,6 +239,7 @@ export async function sendKillConfirmationToNotifyChannel(
   bossId: string,
   imagePath: string,
   bossName: string,
+  mapName: string,
   muServer: MuServer,
   nextSpawnAt: Date,
   markedBy: string,
@@ -202,7 +247,13 @@ export async function sendKillConfirmationToNotifyChannel(
   const channel = await client.channels.fetch(notifyChannelId).catch(() => null);
   if (!channel?.isSendable()) return;
 
-  const embed = buildKillConfirmationEmbed(bossName, muServer, nextSpawnAt, markedBy);
+  const embed = buildKillConfirmationEmbed(
+    bossName,
+    mapName,
+    muServer,
+    nextSpawnAt,
+    markedBy,
+  );
   const files = imagePath ? [buildBossAttachment(bossId, imagePath)] : [];
 
   if (files.length > 0) {

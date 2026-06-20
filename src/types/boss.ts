@@ -20,6 +20,11 @@ export type SpawnMode =
   | AfterKillRangeSpawnMode
   | FixedTimesSpawnMode;
 
+export type BossMap = {
+  id: string;
+  name: string;
+};
+
 export type Boss = {
   id: string;
   name: string;
@@ -27,6 +32,7 @@ export type Boss = {
   quantity: number;
   spawnMode: SpawnMode;
   image: string;
+  maps: BossMap[];
 };
 
 export type GuildConfig = {
@@ -40,6 +46,7 @@ export type BossState = {
   guildId: string;
   muServer: number;
   bossId: string;
+  mapId: string;
   killedAt: number | null;
   nextSpawnAt: number;
   notifiedForSpawnAt: number | null;

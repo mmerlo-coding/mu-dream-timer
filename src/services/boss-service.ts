@@ -1,7 +1,5 @@
-import fs from "node:fs";
 import type { Boss } from "../types/boss.js";
-import { resolveFromRoot } from "../utils/paths.js";
-import { getBossById, getAllBosses } from "./boss-catalog.js";
+import { getAllBosses, getBossById, getBossMap } from "./boss-catalog.js";
 import {
   getBossState,
   getBossStatesForGuild,
@@ -11,36 +9,43 @@ import { getNextSpawnAt } from "./spawn-calculator.js";
 
 export type BossStatus = {
   boss: Boss;
+  mapId: string;
+  mapName: string;
   killedAt: Date | null;
   nextSpawnAt: Date | null;
 };
 
-export function getBossImagePath(boss: Boss) {
-  return resolveFromRoot(boss.image);
-}
-
-export function bossImageExists(boss: Boss) {
-  return fs.existsSync(getBossImagePath(boss));
+function buildStatus(
+  boss: Boss,
+  mapId: string,
+  mapName: string,
+  killedAt: Date | null,
+  now: Date,
+): BossStatus {
+  return {
+    boss,
+    mapId,
+    mapName,
+    killedAt,
+    nextSpawnAt: getNextSpawnAt(boss, killedAt, now),
+  };
 }
 
 export function getBossStatus(
   guildId: string,
   muServer: number,
   bossId: string,
+  mapId: string,
   now = new Date(),
 ): BossStatus | null {
   const boss = getBossById(bossId);
-  if (!boss) return null;
+  const map = getBossMap(bossId, mapId);
+  if (!boss || !map) return null;
 
-  const stored = getBossState(guildId, muServer, bossId);
+  const stored = getBossState(guildId, muServer, bossId, mapId);
   const killedAt = stored?.killedAt ? new Date(stored.killedAt) : null;
-  const nextSpawnAt = getNextSpawnAt(boss, killedAt, now);
 
-  return {
-    boss,
-    killedAt,
-    nextSpawnAt,
-  };
+  return buildStatus(boss, mapId, map.name, killedAt, now);
 }
 
 export function getAllBossStatuses(
@@ -49,30 +54,34 @@ export function getAllBossStatuses(
   now = new Date(),
 ): BossStatus[] {
   const storedStates = new Map(
-    getBossStatesForGuild(guildId, muServer).map((state) => [state.bossId, state]),
+    getBossStatesForGuild(guildId, muServer).map(
+      (state) => [`${state.bossId}:${state.mapId}`, state],
+    ),
   );
 
-  return getAllBosses().map((boss) => {
-    const stored = storedStates.get(boss.id);
-    const killedAt = stored?.killedAt ? new Date(stored.killedAt) : null;
-    const nextSpawnAt = getNextSpawnAt(boss, killedAt, now);
+  const statuses: BossStatus[] = [];
 
-    return {
-      boss,
-      killedAt,
-      nextSpawnAt,
-    };
-  });
+  for (const boss of getAllBosses()) {
+    for (const map of boss.maps) {
+      const stored = storedStates.get(`${boss.id}:${map.id}`);
+      const killedAt = stored?.killedAt ? new Date(stored.killedAt) : null;
+      statuses.push(buildStatus(boss, map.id, map.name, killedAt, now));
+    }
+  }
+
+  return statuses;
 }
 
 export function markBossDead(
   guildId: string,
   muServer: number,
   bossId: string,
+  mapId: string,
   killedAt = new Date(),
 ) {
   const boss = getBossById(bossId);
-  if (!boss) return null;
+  const map = getBossMap(bossId, mapId);
+  if (!boss || !map) return null;
 
   const nextSpawnAt = getNextSpawnAt(boss, killedAt, killedAt);
   if (!nextSpawnAt) return null;
@@ -81,6 +90,7 @@ export function markBossDead(
     guildId,
     muServer,
     bossId,
+    mapId,
     killedAt: killedAt.getTime(),
     nextSpawnAt: nextSpawnAt.getTime(),
     notifiedForSpawnAt: null,
@@ -88,6 +98,8 @@ export function markBossDead(
 
   return {
     boss,
+    mapId,
+    mapName: map.name,
     killedAt,
     nextSpawnAt,
   };
@@ -101,31 +113,34 @@ export function syncFixedBossStates(
   for (const boss of getAllBosses()) {
     if (boss.spawnMode.type !== "fixedTimes") continue;
 
-    const stored = getBossState(guildId, muServer, boss.id);
-    const killedAt = stored?.killedAt ? new Date(stored.killedAt) : null;
-    const nextSpawnAt = getNextSpawnAt(boss, killedAt, now);
+    for (const map of boss.maps) {
+      const stored = getBossState(guildId, muServer, boss.id, map.id);
+      const killedAt = stored?.killedAt ? new Date(stored.killedAt) : null;
+      const nextSpawnAt = getNextSpawnAt(boss, killedAt, now);
 
-    if (!nextSpawnAt) continue;
+      if (!nextSpawnAt) continue;
 
-    const shouldUpdate =
-      !stored ||
-      stored.nextSpawnAt !== nextSpawnAt.getTime() ||
-      (stored.notifiedForSpawnAt !== null &&
-        stored.notifiedForSpawnAt !== nextSpawnAt.getTime() &&
-        nextSpawnAt.getTime() <= now.getTime());
+      const shouldUpdate =
+        !stored ||
+        stored.nextSpawnAt !== nextSpawnAt.getTime() ||
+        (stored.notifiedForSpawnAt !== null &&
+          stored.notifiedForSpawnAt !== nextSpawnAt.getTime() &&
+          nextSpawnAt.getTime() <= now.getTime());
 
-    if (shouldUpdate && (!stored || stored.nextSpawnAt !== nextSpawnAt.getTime())) {
-      upsertBossState({
-        guildId,
-        muServer,
-        bossId: boss.id,
-        killedAt: stored?.killedAt ?? null,
-        nextSpawnAt: nextSpawnAt.getTime(),
-        notifiedForSpawnAt:
-          stored?.notifiedForSpawnAt === nextSpawnAt.getTime()
-            ? stored.notifiedForSpawnAt
-            : null,
-      });
+      if (shouldUpdate && (!stored || stored.nextSpawnAt !== nextSpawnAt.getTime())) {
+        upsertBossState({
+          guildId,
+          muServer,
+          bossId: boss.id,
+          mapId: map.id,
+          killedAt: stored?.killedAt ?? null,
+          nextSpawnAt: nextSpawnAt.getTime(),
+          notifiedForSpawnAt:
+            stored?.notifiedForSpawnAt === nextSpawnAt.getTime()
+              ? stored.notifiedForSpawnAt
+              : null,
+        });
+      }
     }
   }
 }

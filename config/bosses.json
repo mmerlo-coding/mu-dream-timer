@@ -2,26 +2,41 @@
   {
     "id": "muggron",
     "name": "Muggron",
-    "location": "2× Abismo Sombrío, 2× Crywolf, 2× Barracks de Balgass",
+    "location": "Abismo Sombrío, Crywolf, Barracks de Balgass",
     "quantity": 6,
-    "spawnMode": { "type": "afterKillRange", "minHours": 7, "maxHours": 8 },
-    "image": "assets/bosses/muggron.png"
+    "spawnMode": { "type": "afterKillRange", "minHours": 3, "maxHours": 4 },
+    "image": "assets/bosses/muggron.png",
+    "maps": [
+      { "id": "shadow-abyss", "name": "Abismo Sombrío" },
+      { "id": "crywolf", "name": "Crywolf" },
+      { "id": "barracks-balgass", "name": "Barracks de Balgass" }
+    ]
   },
   {
     "id": "kharzul",
     "name": "Kharzul",
-    "location": "Abismo Sombrío",
+    "location": "Abismo Sombrío, Ruined Lorencia, Ruined Devias",
     "quantity": 1,
     "spawnMode": { "type": "afterKillRange", "minHours": 7, "maxHours": 8 },
-    "image": "assets/bosses/kharzul.png"
+    "image": "assets/bosses/kharzul.png",
+    "maps": [
+      { "id": "shadow-abyss", "name": "Abismo Sombrío" },
+      { "id": "ruined-lorencia", "name": "Ruined Lorencia" },
+      { "id": "ruined-devias", "name": "Ruined Devias" }
+    ]
   },
   {
     "id": "vescrya",
     "name": "Vescrya",
-    "location": "Abismo Sombrío",
+    "location": "Abismo Sombrío, Ruined Lorencia, Ruined Devias",
     "quantity": 1,
     "spawnMode": { "type": "afterKillRange", "minHours": 7, "maxHours": 8 },
-    "image": "assets/bosses/vescrya.png"
+    "image": "assets/bosses/vescrya.png",
+    "maps": [
+      { "id": "shadow-abyss", "name": "Abismo Sombrío" },
+      { "id": "ruined-lorencia", "name": "Ruined Lorencia" },
+      { "id": "ruined-devias", "name": "Ruined Devias" }
+    ]
   },
   {
     "id": "borgar",
@@ -29,7 +44,8 @@
     "location": "Abismo Sombrío",
     "quantity": 1,
     "spawnMode": { "type": "afterKillRange", "minHours": 2, "maxHours": 3 },
-    "image": "assets/bosses/borgar.png"
+    "image": "assets/bosses/borgar.png",
+    "maps": [{ "id": "shadow-abyss", "name": "Abismo Sombrío" }]
   },
   {
     "id": "heroe-explorador",
@@ -37,7 +53,8 @@
     "location": "Crywolf",
     "quantity": 10,
     "spawnMode": { "type": "afterKill", "hours": 2 },
-    "image": "assets/bosses/heroe-explorador.png"
+    "image": "assets/bosses/heroe-explorador.png",
+    "maps": [{ "id": "crywolf", "name": "Crywolf" }]
   },
   {
     "id": "heroe-hombre-lobo",
@@ -45,7 +62,8 @@
     "location": "Crywolf",
     "quantity": 10,
     "spawnMode": { "type": "afterKill", "hours": 2 },
-    "image": "assets/bosses/heroe-hombre-lobo.png"
+    "image": "assets/bosses/heroe-hombre-lobo.png",
+    "maps": [{ "id": "crywolf", "name": "Crywolf" }]
   },
   {
     "id": "goblin-azul",
@@ -53,7 +71,8 @@
     "location": "Abismo Sombrío",
     "quantity": 5,
     "spawnMode": { "type": "afterKillRange", "minHours": 10, "maxHours": 11 },
-    "image": "assets/bosses/goblin-azul.png"
+    "image": "assets/bosses/goblin-azul.png",
+    "maps": [{ "id": "shadow-abyss", "name": "Abismo Sombrío" }]
   },
   {
     "id": "goblin-rojo",
@@ -61,7 +80,8 @@
     "location": "Abismo Sombrío",
     "quantity": 4,
     "spawnMode": { "type": "afterKillRange", "minHours": 10, "maxHours": 11 },
-    "image": "assets/bosses/goblin-rojo.png"
+    "image": "assets/bosses/goblin-rojo.png",
+    "maps": [{ "id": "shadow-abyss", "name": "Abismo Sombrío" }]
   },
   {
     "id": "goblin-amarillo",
@@ -69,7 +89,8 @@
     "location": "Abismo Sombrío",
     "quantity": 3,
     "spawnMode": { "type": "afterKillRange", "minHours": 10, "maxHours": 11 },
-    "image": "assets/bosses/goblin-amarillo.png"
+    "image": "assets/bosses/goblin-amarillo.png",
+    "maps": [{ "id": "shadow-abyss", "name": "Abismo Sombrío" }]
   },
   {
     "id": "dragon-rojo",
@@ -77,7 +98,8 @@
     "location": "Aida",
     "quantity": 3,
     "spawnMode": { "type": "fixedTimes", "times": ["08:00", "20:00"] },
-    "image": "assets/bosses/dragon-rojo.png"
+    "image": "assets/bosses/dragon-rojo.png",
+    "maps": [{ "id": "aida", "name": "Aida" }]
   },
   {
     "id": "abbadon",
@@ -85,7 +107,8 @@
     "location": "Twisted Karutan",
     "quantity": 1,
     "spawnMode": { "type": "fixedTimes", "times": ["03:50", "17:50"] },
-    "image": "assets/bosses/abbadon.png"
+    "image": "assets/bosses/abbadon.png",
+    "maps": [{ "id": "twisted-karutan", "name": "Twisted Karutan" }]
   },
   {
     "id": "lord-kundun-shadow",
@@ -93,7 +116,8 @@
     "location": "Abismo Sombrío",
     "quantity": 1,
     "spawnMode": { "type": "fixedTimes", "times": ["01:50", "15:50"] },
-    "image": "assets/bosses/lord-kundun-shadow.png"
+    "image": "assets/bosses/lord-kundun-shadow.png",
+    "maps": [{ "id": "shadow-abyss", "name": "Abismo Sombrío" }]
   },
   {
     "id": "lord-kundun-kanturu",
@@ -101,7 +125,8 @@
     "location": "Laberinto de Kanturu",
     "quantity": 1,
     "spawnMode": { "type": "fixedTimes", "times": ["04:50", "20:50"] },
-    "image": "assets/bosses/lord-kundun-kanturu.png"
+    "image": "assets/bosses/lord-kundun-kanturu.png",
+    "maps": [{ "id": "kanturu", "name": "Laberinto de Kanturu" }]
   },
   {
     "id": "senor-supremo-infernal",
@@ -109,14 +134,16 @@
     "location": "Crimson Icarus",
     "quantity": 1,
     "spawnMode": { "type": "fixedTimes", "times": ["23:50"] },
-    "image": "assets/bosses/senor-supremo-infernal.png"
+    "image": "assets/bosses/senor-supremo-infernal.png",
+    "maps": [{ "id": "crimson-icarus", "name": "Crimson Icarus" }]
   },
   {
     "id": "boss-prueba",
     "name": "Boss de Prueba",
-    "location": "Testing — eliminar en producción",
+    "location": "Testing",
     "quantity": 1,
     "spawnMode": { "type": "afterKill", "hours": 0, "minutes": 6 },
-    "image": "assets/bosses/borgar.png"
+    "image": "assets/bosses/borgar.png",
+    "maps": [{ "id": "testing", "name": "Mapa de prueba" }]
   }
 ]

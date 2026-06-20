@@ -1,9 +1,42 @@
-import type { ButtonInteraction, StringSelectMenuInteraction } from "discord.js";
+import type {
+  ButtonInteraction,
+  Message,
+  StringSelectMenuInteraction,
+} from "discord.js";
+import { getDefaultMapId } from "../services/boss-catalog.js";
 import { markBossDead } from "../services/boss-service.js";
 import { sendKillConfirmationToNotifyChannel } from "../services/panel-builder.js";
 import { refreshDashboard } from "../services/panel-updater.js";
 import { getGuildConfigOrError } from "../utils/permissions.js";
 import type { MuServer } from "../types/boss.js";
+
+function getSelectedOptionValue(message: Message, rowIndex: number) {
+  const row = message.components[rowIndex];
+  if (!row || row.type !== 1) return undefined;
+
+  const select = row.components[0];
+  if (!select || select.type !== 3) return undefined;
+
+  return select.options.find((option) => option.default)?.value;
+}
+
+function parseKillCustomId(customId: string) {
+  const parts = customId.split(":");
+
+  if (parts.length >= 4) {
+    return {
+      bossId: parts[1],
+      mapId: parts[2],
+      muServer: Number(parts[3]) as MuServer,
+    };
+  }
+
+  return {
+    bossId: parts[1],
+    mapId: getDefaultMapId(parts[1]),
+    muServer: Number(parts[2]) as MuServer,
+  };
+}
 
 export async function handleSelectBoss(interaction: StringSelectMenuInteraction) {
   const access = getGuildConfigOrError(interaction.guildId);
@@ -15,15 +48,38 @@ export async function handleSelectBoss(interaction: StringSelectMenuInteraction)
   await interaction.deferUpdate();
 
   const bossId = interaction.values[0];
-  await refreshDashboard(interaction.client, interaction.guildId!, bossId);
+  const mapId = getDefaultMapId(bossId);
+  await refreshDashboard(interaction.client, interaction.guildId!, bossId, mapId);
+}
+
+export async function handleSelectMap(interaction: StringSelectMenuInteraction) {
+  const access = getGuildConfigOrError(interaction.guildId);
+  if (!access.ok) {
+    await interaction.reply({ content: access.error, ephemeral: true });
+    return;
+  }
+
+  const bossId = interaction.customId.split(":")[1];
+  if (!bossId) {
+    await interaction.reply({
+      content: "Primero selecciona un boss en el menú superior.",
+      ephemeral: true,
+    });
+    return;
+  }
+
+  await interaction.deferUpdate();
+
+  const mapId = interaction.values[0];
+  await refreshDashboard(interaction.client, interaction.guildId!, bossId, mapId);
 }
 
 export async function handleKillBoss(interaction: ButtonInteraction) {
-  const [, bossId, muServerText] = interaction.customId.split(":");
+  const { bossId, mapId, muServer } = parseKillCustomId(interaction.customId);
 
-  if (bossId === "none") {
+  if (bossId === "none" || mapId === "none") {
     await interaction.reply({
-      content: "Primero selecciona un boss en el menú desplegable.",
+      content: "Primero selecciona un boss y un mapa en los menús desplegables.",
       ephemeral: true,
     });
     return;
@@ -37,11 +93,10 @@ export async function handleKillBoss(interaction: ButtonInteraction) {
 
   await interaction.deferUpdate();
 
-  const muServer = Number(muServerText) as MuServer;
-  const result = markBossDead(interaction.guildId!, muServer, bossId);
+  const result = markBossDead(interaction.guildId!, muServer, bossId, mapId);
 
   if (!result) {
-    await interaction.followUp({ content: "Boss no encontrado.", ephemeral: true });
+    await interaction.followUp({ content: "Boss o mapa no encontrado.", ephemeral: true });
     return;
   }
 
@@ -52,12 +107,13 @@ export async function handleKillBoss(interaction: ButtonInteraction) {
     result.boss.id,
     result.boss.image,
     result.boss.name,
+    result.mapName,
     muServer,
     result.nextSpawnAt,
     interaction.user.toString(),
   );
 
-  await refreshDashboard(interaction.client, interaction.guildId!);
+  await refreshDashboard(interaction.client, interaction.guildId!, bossId, mapId);
 }
 
 export async function handleRefreshDashboard(interaction: ButtonInteraction) {
@@ -68,7 +124,20 @@ export async function handleRefreshDashboard(interaction: ButtonInteraction) {
   }
 
   await interaction.deferUpdate();
-  await refreshDashboard(interaction.client, interaction.guildId!);
+
+  const selectedBossId = getSelectedOptionValue(interaction.message, 0);
+  const mapRow = interaction.message.components[1];
+  const selectedMapId =
+    mapRow?.type === 1 && mapRow.components[0]?.type === 3
+      ? mapRow.components[0].options.find((option) => option.default)?.value
+      : undefined;
+
+  await refreshDashboard(
+    interaction.client,
+    interaction.guildId!,
+    selectedBossId,
+    selectedMapId,
+  );
 }
 
 export function registerInteractionHandlers(client: import("discord.js").Client) {
@@ -76,6 +145,11 @@ export function registerInteractionHandlers(client: import("discord.js").Client)
     try {
       if (interaction.isStringSelectMenu() && interaction.customId === "select_boss") {
         await handleSelectBoss(interaction);
+        return;
+      }
+
+      if (interaction.isStringSelectMenu() && interaction.customId.startsWith("select_map")) {
+        await handleSelectMap(interaction);
         return;
       }
 
