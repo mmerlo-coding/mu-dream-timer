@@ -12,10 +12,10 @@ import {
 } from "./boss-service.js";
 import {
   buildBossAttachment,
+  buildKillButtonRows,
   buildNotificationEmbed,
   buildNotificationKillButtons,
 } from "./panel-builder.js";
-import { ActionRowBuilder, ButtonBuilder } from "discord.js";
 import { NOTIFY_MINUTES } from "../utils/time.js";
 import { MU_SERVERS } from "../types/boss.js";
 
@@ -62,9 +62,7 @@ export async function runNotificationCycle(client: Client) {
         }
 
         const killButtons = buildNotificationKillButtons(status.boss.id, status.mapId);
-        const components = [
-          new ActionRowBuilder<ButtonBuilder>().addComponents(...killButtons),
-        ];
+        const components = buildKillButtonRows(killButtons);
 
         await channel.send({ embeds: [embed], files, components });
 

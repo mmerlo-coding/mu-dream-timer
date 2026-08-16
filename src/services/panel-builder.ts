@@ -13,9 +13,25 @@ import type { BossStatus } from "./boss-service.js";
 import { getSpawnRangeLabel } from "./spawn-calculator.js";
 import { formatDuration, formatServerDateTime } from "../utils/time.js";
 import { resolveFromRoot } from "../utils/paths.js";
-import type { MuServer } from "../types/boss.js";
+import { MU_SERVERS, type MuServer } from "../types/boss.js";
 
 export type DashboardEntry = BossStatus & { muServer: MuServer };
+
+const MAX_BUTTONS_PER_ROW = 5;
+
+function chunk<T>(items: T[], size: number): T[][] {
+  const rows: T[][] = [];
+  for (let index = 0; index < items.length; index += size) {
+    rows.push(items.slice(index, index + size));
+  }
+  return rows;
+}
+
+export function buildKillButtonRows(buttons: ButtonBuilder[]) {
+  return chunk(buttons, MAX_BUTTONS_PER_ROW).map((rowButtons) =>
+    new ActionRowBuilder<ButtonBuilder>().addComponents(...rowButtons),
+  );
+}
 
 function buildUpcomingLine(entry: DashboardEntry, now: Date) {
   if (!entry.nextSpawnAt) return null;
@@ -43,7 +59,7 @@ export function buildDashboardEmbed(entries: DashboardEntry[], now = new Date())
           .filter((line): line is string => Boolean(line))
       : [
           "Sin timers activos.",
-          "Selecciona un boss y mapa abajo, luego pulsa **Murió S1 / S2 / S3** cuando lo maten.",
+          "Selecciona un boss y mapa abajo, luego pulsa el botón del servidor (**S1–S10**) cuando lo maten.",
         ];
 
   return new EmbedBuilder()
@@ -51,7 +67,7 @@ export function buildDashboardEmbed(entries: DashboardEntry[], now = new Date())
     .setTitle("MU DREAM — Boss Timers")
     .setDescription(
       [
-        "Próximos respawns (servidores 1, 2 y 3):",
+        "Próximos respawns (servidores 1 a 10):",
         "",
         ...lines,
         "",
@@ -71,20 +87,20 @@ export function buildDashboardEmbed(entries: DashboardEntry[], now = new Date())
 export function buildKillButtons(bossId: string | null, mapId: string | null) {
   const disabled = !bossId || !mapId;
 
-  return [1, 2, 3].map((server) =>
+  return MU_SERVERS.map((server) =>
     new ButtonBuilder()
       .setCustomId(`kill:${bossId ?? "none"}:${mapId ?? "none"}:${server}`)
-      .setLabel(`Murió S${server}`)
+      .setLabel(`S${server}`)
       .setStyle(ButtonStyle.Danger)
       .setDisabled(disabled),
   );
 }
 
 export function buildNotificationKillButtons(bossId: string, mapId: string) {
-  return [1, 2, 3].map((server) =>
+  return MU_SERVERS.map((server) =>
     new ButtonBuilder()
       .setCustomId(`kill:${bossId}:${mapId}:${server}`)
-      .setLabel(`☠️ Murió S${server}`)
+      .setLabel(`☠️ S${server}`)
       .setStyle(ButtonStyle.Danger),
   );
 }
@@ -142,14 +158,16 @@ export function buildDashboardComponents(
     .setLabel("Actualizar")
     .setStyle(ButtonStyle.Secondary);
 
+  const killButtonRows = buildKillButtonRows(
+    buildKillButtons(selectedBossId ?? null, activeMapId),
+  );
+
   return [
     new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selectMenu),
     new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
       buildMapSelectMenu(selectedBossId ?? null, activeMapId ?? undefined),
     ),
-    new ActionRowBuilder<ButtonBuilder>().addComponents(
-      ...buildKillButtons(selectedBossId ?? null, activeMapId),
-    ),
+    ...killButtonRows,
     new ActionRowBuilder<ButtonBuilder>().addComponents(refreshButton),
   ];
 }

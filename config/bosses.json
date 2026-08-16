@@ -138,6 +138,51 @@
     "maps": [{ "id": "crimson-icarus", "name": "Crimson Icarus" }]
   },
   {
+    "id": "red-dragon",
+    "name": "Red Dragon",
+    "location": "Abismo Sombrío",
+    "quantity": 1,
+    "spawnMode": { "type": "afterKill", "hours": 12 },
+    "image": "assets/bosses/red-dragon.png",
+    "maps": [{ "id": "shadow-abyss", "name": "Abismo Sombrío" }]
+  },
+  {
+    "id": "cursed-santa",
+    "name": "Cursed Santa",
+    "location": "Abismo Sombrío",
+    "quantity": 1,
+    "spawnMode": { "type": "afterKill", "hours": 12 },
+    "image": "assets/bosses/cursed-santa.png",
+    "maps": [{ "id": "shadow-abyss", "name": "Abismo Sombrío" }]
+  },
+  {
+    "id": "skeleton-king",
+    "name": "Skeleton King",
+    "location": "Abismo Sombrío",
+    "quantity": 1,
+    "spawnMode": { "type": "afterKill", "hours": 12 },
+    "image": "assets/bosses/skeleton-king.png",
+    "maps": [{ "id": "shadow-abyss", "name": "Abismo Sombrío" }]
+  },
+  {
+    "id": "skarnath",
+    "name": "Skarnath",
+    "location": "Kardamahal Temple",
+    "quantity": 10,
+    "spawnMode": { "type": "afterKillRange", "minHours": 3, "maxHours": 4 },
+    "image": "assets/bosses/skarnath.png",
+    "maps": [{ "id": "kardamahal-temple", "name": "Kardamahal Temple" }]
+  },
+  {
+    "id": "dreadmourne",
+    "name": "Dreadmourne",
+    "location": "Crywolf",
+    "quantity": 1,
+    "spawnMode": { "type": "fixedTimes", "times": ["23:50"] },
+    "image": "assets/bosses/dreadmourne.png",
+    "maps": [{ "id": "crywolf", "name": "Crywolf" }]
+  },
+  {
     "id": "boss-prueba",
     "name": "Boss de Prueba",
     "location": "Testing",
