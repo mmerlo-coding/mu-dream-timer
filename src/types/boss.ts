@@ -52,5 +52,5 @@ export type BossState = {
   notifiedForSpawnAt: number | null;
 };
 
-export const MU_SERVERS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] as const;
+export const MU_SERVERS = [1, 2, 3] as const;
 export type MuServer = (typeof MU_SERVERS)[number];

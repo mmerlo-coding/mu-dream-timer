@@ -59,7 +59,7 @@ export function buildDashboardEmbed(entries: DashboardEntry[], now = new Date())
           .filter((line): line is string => Boolean(line))
       : [
           "Sin timers activos.",
-          "Selecciona un boss y mapa abajo, luego pulsa el botón del servidor (**S1–S10**) cuando lo maten.",
+          "Selecciona un boss y mapa abajo, luego pulsa **Murió S1 / S2 / S3** cuando lo maten.",
         ];
 
   return new EmbedBuilder()
@@ -67,7 +67,7 @@ export function buildDashboardEmbed(entries: DashboardEntry[], now = new Date())
     .setTitle("MU DREAM — Boss Timers")
     .setDescription(
       [
-        "Próximos respawns (servidores 1 a 10):",
+        "Próximos respawns (servidores 1, 2 y 3):",
         "",
         ...lines,
         "",
@@ -90,7 +90,7 @@ export function buildKillButtons(bossId: string | null, mapId: string | null) {
   return MU_SERVERS.map((server) =>
     new ButtonBuilder()
       .setCustomId(`kill:${bossId ?? "none"}:${mapId ?? "none"}:${server}`)
-      .setLabel(`S${server}`)
+      .setLabel(`Murió S${server}`)
       .setStyle(ButtonStyle.Danger)
       .setDisabled(disabled),
   );
@@ -100,7 +100,7 @@ export function buildNotificationKillButtons(bossId: string, mapId: string) {
   return MU_SERVERS.map((server) =>
     new ButtonBuilder()
       .setCustomId(`kill:${bossId}:${mapId}:${server}`)
-      .setLabel(`☠️ S${server}`)
+      .setLabel(`☠️ Murió S${server}`)
       .setStyle(ButtonStyle.Danger),
   );
 }
