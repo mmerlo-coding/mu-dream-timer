@@ -2,6 +2,7 @@ import { DatabaseSync } from "node:sqlite";
 import fs from "node:fs";
 import path from "node:path";
 import type { BossState, GuildConfig } from "../types/boss.js";
+import { MU_SERVERS } from "../types/boss.js";
 import { getDefaultMapId } from "./boss-catalog.js";
 import { resolveFromRoot } from "../utils/paths.js";
 
@@ -127,6 +128,21 @@ function migrateBossStateMapColumn() {
 }
 
 migrateBossStateMapColumn();
+
+// Remove leftover rows for servers that are no longer tracked (e.g. the
+// temporary 1-10 server experiment). Stale rows on unknown servers can surface
+// as phantom / "wrong server" notifications.
+function pruneUnknownServers() {
+  const columns = getTableColumns("boss_state");
+  if (columns.length === 0) return;
+
+  const placeholders = MU_SERVERS.map(() => "?").join(", ");
+  db.prepare(
+    `DELETE FROM boss_state WHERE mu_server NOT IN (${placeholders})`,
+  ).run(...MU_SERVERS);
+}
+
+pruneUnknownServers();
 
 type GuildConfigRow = {
   guild_id: string;

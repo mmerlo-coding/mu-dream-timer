@@ -1,4 +1,4 @@
-import type { Client } from "discord.js";
+import type { Client, SendableChannels } from "discord.js";
 import {
   getAllGuildConfigs,
   getBossState,
@@ -17,13 +17,53 @@ import {
   buildNotificationKillButtons,
 } from "./panel-builder.js";
 import { NOTIFY_MINUTES } from "../utils/time.js";
-import { MU_SERVERS } from "../types/boss.js";
+import { MU_SERVERS, type MuServer } from "../types/boss.js";
 
 function shouldNotify(status: BossStatus, now: Date) {
   if (!status.nextSpawnAt) return false;
 
   const remainingMs = status.nextSpawnAt.getTime() - now.getTime();
   return remainingMs > 0 && remainingMs <= NOTIFY_MINUTES * 60_000;
+}
+
+async function notifyBossSpawn(
+  channel: SendableChannels,
+  guildId: string,
+  muServer: MuServer,
+  status: BossStatus,
+  now: Date,
+) {
+  const stored = getBossState(guildId, muServer, status.boss.id, status.mapId);
+  const nextSpawnAt = status.nextSpawnAt?.getTime();
+
+  if (!nextSpawnAt) return;
+  if (stored?.notifiedForSpawnAt === nextSpawnAt) return;
+
+  const embed = buildNotificationEmbed(status, muServer, now);
+  const files = status.boss.image
+    ? [buildBossAttachment(status.boss.id, status.boss.image)]
+    : [];
+
+  if (files.length > 0) {
+    embed.setImage(`attachment://${status.boss.id}.png`);
+  }
+
+  const killButtons = buildNotificationKillButtons(status.boss.id, status.mapId);
+  const components = buildKillButtonRows(killButtons);
+
+  await channel.send({ embeds: [embed], files, components });
+
+  upsertBossState({
+    guildId,
+    muServer,
+    bossId: status.boss.id,
+    mapId: status.mapId,
+    killedAt: stored?.killedAt ?? null,
+    nextSpawnAt,
+    notifiedForSpawnAt: nextSpawnAt,
+  });
+
+  markNotified(guildId, muServer, status.boss.id, status.mapId, nextSpawnAt);
 }
 
 export async function runNotificationCycle(client: Client) {
@@ -41,48 +81,16 @@ export async function runNotificationCycle(client: Client) {
       for (const status of statuses) {
         if (!shouldNotify(status, now)) continue;
 
-        const stored = getBossState(
-          config.guildId,
-          muServer,
-          status.boss.id,
-          status.mapId,
-        );
-        const nextSpawnAt = status.nextSpawnAt?.getTime();
-
-        if (!nextSpawnAt) continue;
-        if (stored?.notifiedForSpawnAt === nextSpawnAt) continue;
-
-        const embed = buildNotificationEmbed(status, muServer, now);
-        const files = status.boss.image
-          ? [buildBossAttachment(status.boss.id, status.boss.image)]
-          : [];
-
-        if (files.length > 0) {
-          embed.setImage(`attachment://${status.boss.id}.png`);
+        // Isolate each notification: a single failed send (bad image, Discord
+        // API hiccup, missing permission) must not abort the rest of the cycle.
+        try {
+          await notifyBossSpawn(channel, config.guildId, muServer, status, now);
+        } catch (error) {
+          console.error(
+            `Failed to notify ${status.boss.id} (${status.mapId}) on S${muServer}:`,
+            error,
+          );
         }
-
-        const killButtons = buildNotificationKillButtons(status.boss.id, status.mapId);
-        const components = buildKillButtonRows(killButtons);
-
-        await channel.send({ embeds: [embed], files, components });
-
-        upsertBossState({
-          guildId: config.guildId,
-          muServer,
-          bossId: status.boss.id,
-          mapId: status.mapId,
-          killedAt: stored?.killedAt ?? null,
-          nextSpawnAt,
-          notifiedForSpawnAt: nextSpawnAt,
-        });
-
-        markNotified(
-          config.guildId,
-          muServer,
-          status.boss.id,
-          status.mapId,
-          nextSpawnAt,
-        );
       }
     }
   }
