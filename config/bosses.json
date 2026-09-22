@@ -183,6 +183,26 @@
     "maps": [{ "id": "crywolf", "name": "Crywolf" }]
   },
   {
+    "id": "draviel",
+    "name": "Draviel",
+    "location": "Cualquier mapa",
+    "quantity": 10,
+    "spawnMode": { "type": "afterKillRange", "minHours": 4, "maxHours": 6 },
+    "image": "assets/bosses/draviel.png",
+    "maps": [
+      { "id": "shadow-abyss", "name": "Abismo Sombrío" },
+      { "id": "crywolf", "name": "Crywolf" },
+      { "id": "barracks-balgass", "name": "Barracks de Balgass" },
+      { "id": "ruined-lorencia", "name": "Ruined Lorencia" },
+      { "id": "ruined-devias", "name": "Ruined Devias" },
+      { "id": "aida", "name": "Aida" },
+      { "id": "twisted-karutan", "name": "Twisted Karutan" },
+      { "id": "kanturu", "name": "Laberinto de Kanturu" },
+      { "id": "crimson-icarus", "name": "Crimson Icarus" },
+      { "id": "kardamahal-temple", "name": "Kardamahal Temple" }
+    ]
+  },
+  {
     "id": "boss-prueba",
     "name": "Boss de Prueba",
     "location": "Testing",
